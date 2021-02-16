@@ -1,21 +1,33 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Mathematics;
 [RequireComponent(typeof(MeshFilter))]
 public class TerrainGenator : MonoBehaviour
 {
-    int[] MapAreaNArray;
+    float[] mapAreaNArray;
     Mesh terrainMesh;
+    MeshCollider meshCollider;
     Vector3[] newVertices;
     int[] newIndices;
-    int mapSize;
+    int mapSize = 256; //Play around with size
+    int mapAreaColumn = 1;
+    int mapAreaRow = 1;
     private void Start()
     {
+
         terrainMesh = new Mesh();
+        terrainMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mapAreaNArray = new float[mapSize * mapSize];
+        newVertices = new Vector3[mapSize * mapSize];
+        newIndices = new int[(mapSize + 1) * (mapSize + 1) * 4];
+    
         GetComponent<MeshFilter>().mesh = terrainMesh;
         LoadMapData();
         CreateTerrainMesh();
         UpdateTerrainMesh();
+        GetComponent<MeshCollider>().sharedMesh = terrainMesh;
+
 
     }
 
@@ -23,70 +35,67 @@ public class TerrainGenator : MonoBehaviour
     {
     }
 
-    public void LoadMapData()
+    public float[] LoadMapData()
     {
-        mapSize = 256;
+        //add reload whe mapareas Column/Row change
+       
 
-        int mapAreaColumn = 1;
-        int mapAreaRow = 1;
-
-        var LoadMapHeightImage = Resources.Load<Texture2D>("palletHeightMap");
-
-        int[] MapAreaNArray = new int[mapSize * mapSize];
-        Color[] CurrentHeightMapArea = LoadMapHeightImage.GetPixels(mapAreaColumn * mapSize, mapAreaRow * mapSize, mapSize, mapSize);
+        // var LoadMapHeightImage = Resources.Load<Texture2D>("palletHeightMap");
+        // Color[] CurrentHeightMapArea = LoadMapHeightImage.GetPixels(mapAreaColumn * mapSize, mapAreaRow * mapSize, mapSize, mapSize);
 
         for (int i = 0, y = 0; y < mapSize; y++)
         {
             for (int x = 0; x < mapSize; x++)
             {
-                MapAreaNArray[i] = Mathf.FloorToInt(CurrentHeightMapArea[i].grayscale * 100);
-
+                mapAreaNArray[i] = (Unity.Mathematics.noise.cnoise(new float2(.5f * x ,.5f * y))  );
+               
+                i++;
             }
         }
+        return mapAreaNArray;
     }
 
     public void CreateTerrainMesh()
     {
-        newVertices = new Vector3[(mapSize + 1) * (mapSize + 1)];
+        //need even number of vectors to use map height value twice.
 
-        for (int i = 0, z = 0; z < mapSize; z++)
+        for (int i = 0, y = 0; y < mapSize; y++)
         {
-            for (int x = 0; x < mapSize; x++)
+            
+            for (int x = 0; x < mapSize / 2; x++)
             {
-                newVertices[i] = new Vector3(x, 0, z);
-                i++;
+                newVertices[i] = new Vector3((2 * x), mapAreaNArray[i / 2], y);
+                newVertices[i + 1] = new Vector3((2 * x) + 1, mapAreaNArray[(i / 2)+1], y);
+                i += 2;
             }
         }
-
-        int vert = 0;
+        //groups of 4 verts clockwise every odd row is the terrain, and evey even is the terain slope
+        int nthQuad = 0;
         int quad = 0;
-        newIndices = new int[mapSize * mapSize * 4];
-        for (int z = 0; z < mapSize; z++)
+
+        for (int z = 0; z < mapSize - 1; z++)
         {
-            for (int x = 0; x < mapSize; x++)
+            for (int x = 0; x < mapSize - 1; x++)
             {
-                newIndices[quad + 0] = vert + 0;
-                newIndices[quad + 1] = vert + mapSize;
-                newIndices[quad + 2] = vert + mapSize + 1;
-                newIndices[quad + 3] = vert + 1;
-
-                vert++;
+                newIndices[quad + 0] = nthQuad + 0;
+                newIndices[quad + 1] = nthQuad + mapSize;
+                newIndices[quad + 2] = nthQuad + mapSize + 1;
+                newIndices[quad + 3] = nthQuad + 1;
+                nthQuad++;
                 quad += 4;
-
             }
-            // vert++;
+            nthQuad++;
         }
 
     }
 
     public void UpdateTerrainMesh()
     {
-
         terrainMesh.Clear();
         terrainMesh.vertices = newVertices;
         terrainMesh.SetIndices(newIndices, MeshTopology.Quads, 0);
         terrainMesh.RecalculateNormals();
-
+        // terrainMesh.RecalculateBounds();
     }
 
 }
