@@ -40,14 +40,14 @@ public class TerrainGenator : MonoBehaviour
         //add reload whe mapareas Column/Row change
        
 
-        // var LoadMapHeightImage = Resources.Load<Texture2D>("palletHeightMap");
-        // Color[] CurrentHeightMapArea = LoadMapHeightImage.GetPixels(mapAreaColumn * mapSize, mapAreaRow * mapSize, mapSize, mapSize);
+        var LoadMapHeightImage = Resources.Load<Texture2D>("pewter2rightHeightMap");
+        Color[] CurrentHeightMapArea = LoadMapHeightImage.GetPixels(mapAreaColumn * mapSize, mapAreaRow * mapSize, mapSize, mapSize);
 
         for (int i = 0, y = 0; y < mapSize; y++)
         {
             for (int x = 0; x < mapSize; x++)
             {
-                mapAreaNArray[i] = (Unity.Mathematics.noise.cnoise(new float2(.5f * x ,.5f * y))  );
+                mapAreaNArray[i] = Mathf.Floor((CurrentHeightMapArea[i].grayscale *0));
                
                 i++;
             }
@@ -81,6 +81,7 @@ public class TerrainGenator : MonoBehaviour
                 newIndices[quad + 1] = nthQuad + mapSize;
                 newIndices[quad + 2] = nthQuad + mapSize + 1;
                 newIndices[quad + 3] = nthQuad + 1;
+               
                 nthQuad++;
                 quad += 4;
             }
