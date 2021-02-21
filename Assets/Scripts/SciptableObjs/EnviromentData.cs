@@ -8,12 +8,12 @@ public class EnviromentData : ScriptableObject
     public string EnviromentAreaName;
     public int2 mapSize;
     
-    public Texture2D RBRSpawnLocationMap;
+    public Texture2D TBRSpawnMap;
 
     // public int numOfTreeTypes;
     // public int numOfBushTypes;
     // public int numOfRockTypes;
-
+//
     // public int numOfTreesToSpawn;
     // public int numOfBushToSpawn;
     // public int numOfRockToSpawn;
